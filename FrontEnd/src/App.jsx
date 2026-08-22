@@ -6,6 +6,7 @@ import CodeContext from './components/CodeContext';
 import Analysis from './components/Analysis';
 import PastSolutions from './components/PastSolutions';
 import MemoryVault from './components/MemoryVault';
+import History from './components/History';
 
 function App() {
   const [activeTab, setActiveTab] = useState('live-debugger');
@@ -111,36 +112,7 @@ function App() {
 
         {/* Dynamic Historical Logs View */}
         {activeTab === 'history' && (
-          <div className="tab-pane-container">
-            <h2 className="pane-title">Error History</h2>
-            <p className="pane-subtitle">Review historical logs of issues detected and fixed by MemCode on this codebase.</p>
-            <div className="history-table">
-              <div className="history-row header-row">
-                <div>Error Type</div>
-                <div>Location</div>
-                <div>Status</div>
-                <div>Date Detected</div>
-              </div>
-              <div className="history-row">
-                <div className="err-type">TypeError: Cannot read properties of undefined</div>
-                <div className="err-loc font-mono">oauth2.service.ts:142</div>
-                <div><span className="badge-status pending">Needs Review</span></div>
-                <div className="err-date">Today, 3:15 PM</div>
-              </div>
-              <div className="history-row">
-                <div className="err-type">AxiosError: Request failed with status code 401</div>
-                <div className="err-loc font-mono">api.interceptor.ts:48</div>
-                <div><span className="badge-status resolved">Resolved</span></div>
-                <div className="err-date">2 weeks ago</div>
-              </div>
-              <div className="history-row">
-                <div className="err-type">ReferenceError: secretToken is not defined</div>
-                <div className="err-loc font-mono">auth.controller.ts:80</div>
-                <div><span className="badge-status resolved">Resolved</span></div>
-                <div className="err-date">3 months ago</div>
-              </div>
-            </div>
-          </div>
+          <History />
         )}
 
         {/* Dynamic Settings View */}

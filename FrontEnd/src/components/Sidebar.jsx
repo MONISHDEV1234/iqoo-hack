@@ -110,6 +110,15 @@ function Sidebar({ activeTab = 'live-debugger', onTabChange, isOpen, onClose }) 
                     <span className="nav-label">Settings</span>
                     {activeTab === 'settings' && <div className="active-indicator" />}
                 </button>
+
+                {/* User Profile Badge */}
+                <div className="sidebar-user-card">
+                    <div className="user-avatar">JD</div>
+                    <div className="user-details">
+                        <span className="user-name">dev_root</span>
+                        <span className="user-plan">PRO PLAN</span>
+                    </div>
+                </div>
             </div>
         </aside>
     );
