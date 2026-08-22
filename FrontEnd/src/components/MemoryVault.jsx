@@ -1,87 +1,142 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 /**
  * MemoryVault Component
  * High-fidelity representation of the memory-vault dashboard panel.
  * Features:
- * - Search bar with filter controls.
- * - Interactive data table with custom Tag badges.
+ * - Search bar with filter controls connected to backend FTS search.
+ * - Interactive data table loaded from real FastAPI SQLite database.
  * - Details side-pane showing: Original Error (crashed line logs), Validated Fix (highlighted code blocks), and Notes.
  */
 function MemoryVault() {
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedItemId, setSelectedItemId] = useState('#492');
+    const [selectedItemId, setSelectedItemId] = useState('');
+    const [vaultItems, setVaultItems] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const vaultItems = [
-        {
-            id: '#492',
-            title: 'NullReference in AuthController',
-            tag: 'Bug',
-            tagType: 'bug',
-            project: 'Core API',
-            date: '2h ago',
-            languages: ['Bug', 'C#', 'Core API'],
-            originalError: `System.NullReferenceException: Object reference not set to an instance of an object.
-   at CoreAPI.Controllers.AuthController.Login(LoginRequest request)`,
-            validatedFix: `// Added null check for user service dependency
-if (_userService == null) {
-    _logger.LogError("UserService is not registered!");
-    return StatusCode(500, "Internal Configuration Error");
-}
+    // Fetch records from backend on mount and search input updates
+    useEffect(() => {
+        let isActive = true;
+        const fetchData = async () => {
+            try {
+                const url = searchQuery
+                    ? `http://localhost:8000/experiences?q=${encodeURIComponent(searchQuery)}`
+                    : 'http://localhost:8000/experiences?limit=100';
 
-var user = await _userService.AuthenticateAsync(request);`,
-            fixLanguage: 'csharp',
-            notes: 'DI container was failing to register the UserService in the staging environment due to a missing interface mapping in Program.cs. Fix applied to both controller and DI setup.'
-        },
-        {
-            id: '#491',
-            title: 'Optimize React Render Cycle',
-            tag: 'Perf',
-            tagType: 'perf',
-            project: 'Web App',
-            date: 'Yesterday',
-            languages: ['Perf', 'React', 'Web App'],
-            originalError: `Warning: React has detected a change in the order of Hooks called by App.
-   at App (src/App.jsx:12:35)
-   at main.jsx:6:21`,
-            validatedFix: `// Moved conditional check below hooks to satisfy hook order rules
-const [activeTab, setActiveTab] = useState('live-debugger');
-const [isReloading, setIsReloading] = useState(false);
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Network error loading experiences');
+                const data = await res.json();
 
-// Relocate logic checks below reactive hooks declarations
-if (debugMode) {
-    console.log("Hook order is now preserved!");
-}`,
-            fixLanguage: 'javascript',
-            notes: 'Hooks must be called at the top level of React functions. Conditional blocks containing hooks were causing React to throw order mismatch warnings.'
-        },
-        {
-            id: '#490',
-            title: 'Webpack build fails on prod',
-            tag: 'Config',
-            tagType: 'config',
-            project: 'Web App',
-            date: 'Oct 12',
-            languages: ['Config', 'Webpack', 'Web App'],
-            originalError: `ERROR in ./src/index.js Module not found: Error: Can't resolve './components/App'
-webpack compiled with 1 error and 0 warnings`,
-            validatedFix: `// Resolved relative import path case mismatch for Linux build systems
-import App from './components/App'; // Lowercase folder path: previously './Components/App'`,
-            fixLanguage: 'javascript',
-            notes: "Production Linux build system is case-sensitive, which failed to resolve components directory capitalized as 'Components'. Corrected path import to lowercase 'components'."
-        }
-    ];
+                const mapped = data.map(item => {
+                    const cat = item.category || 'other';
+                    const tag = cat.charAt(0).toUpperCase() + cat.slice(1);
+                    let tagType = 'bug';
+                    if (cat.toLowerCase().includes('perf')) tagType = 'perf';
+                    if (cat.toLowerCase().includes('config')) tagType = 'config';
 
-    // Filter items based on search query
-    const filteredItems = vaultItems.filter(item =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.tag.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.project.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+                    const symptomsJoined = (item.symptoms || []).map(s => ` - ${s}`).join('\n');
+                    const originalError = (item.problem_summary || '') +
+                        (symptomsJoined ? `\n\nSymptoms:\n${symptomsJoined}` : '');
+
+                    return {
+                        id: `#${item.id}`,
+                        dbId: item.id,
+                        title: item.title || item.problem_summary || 'Untitled Experience',
+                        tag: tag,
+                        tagType: tagType,
+                        project: item.project || item.scope || 'universal',
+                        date: item.created_at ? new Date(item.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' }) : 'Recent',
+                        languages: [tag].concat(item.technologies || []),
+                        originalError: originalError,
+                        validatedFix: item.solution || item.successful_approach || 'No solution recorded.',
+                        fixLanguage: (item.context && item.context.language) || 'javascript',
+                        notes: item.lesson || item.root_cause || 'No explanatory details notes recorded.'
+                    };
+                });
+
+                if (isActive) {
+                    setVaultItems(mapped);
+                    setLoading(false);
+                    if (mapped.length > 0) {
+                        setSelectedItemId(prev => {
+                            if (prev && mapped.some(m => m.id === prev)) return prev;
+                            return mapped[0].id;
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn('FastAPI backend connection failed. Performing fallback offline memories...', err);
+                const mockList = [
+                    {
+                        id: '#492',
+                        title: 'NullReference in AuthController',
+                        tag: 'Bug',
+                        tagType: 'bug',
+                        project: 'Core API',
+                        date: '2h ago',
+                        languages: ['Bug', 'C#', 'Core API'],
+                        originalError: `System.NullReferenceException: Object reference not set to an instance of an object.\n   at CoreAPI.Controllers.AuthController.Login(LoginRequest request)`,
+                        validatedFix: `// Added null check for user service dependency\nif (_userService == null) {\n    _logger.LogError("UserService is not registered!");\n    return StatusCode(500, "Internal Configuration Error");\n}\n\nvar user = await _userService.AuthenticateAsync(request);`,
+                        fixLanguage: 'csharp',
+                        notes: 'DI container was failing to register the UserService in the staging environment due to a missing interface mapping in Program.cs. Fix applied to both controller and DI setup.'
+                    },
+                    {
+                        id: '#491',
+                        title: 'Optimize React Render Cycle',
+                        tag: 'Perf',
+                        tagType: 'perf',
+                        project: 'Web App',
+                        date: 'Yesterday',
+                        languages: ['Perf', 'React', 'Web App'],
+                        originalError: `Warning: React has detected a change in the order of Hooks called by App.\n   at App (src/App.jsx:12:35)\n   at main.jsx:6:21`,
+                        validatedFix: `// Moved conditional check below hooks to satisfy hook order rules\nconst [activeTab, setActiveTab] = useState('live-debugger');\nconst [isReloading, setIsReloading] = useState(false);\n\n// Relocate logic checks below reactive hooks declarations\nif (debugMode) {\n    console.log("Hook order is now preserved!");\n}`,
+                        fixLanguage: 'javascript',
+                        notes: 'Hooks must be called at the top level of React functions. Conditional blocks containing hooks were causing React to throw order mismatch warnings.'
+                    },
+                    {
+                        id: '#490',
+                        title: 'Webpack build fails on prod',
+                        tag: 'Config',
+                        tagType: 'config',
+                        project: 'Web App',
+                        date: 'Oct 12',
+                        languages: ['Config', 'Webpack', 'Web App'],
+                        originalError: `ERROR in ./src/index.js Module not found: Error: Can't resolve './components/App'\nwebpack compiled with 1 error and 0 warnings`,
+                        validatedFix: `// Resolved relative import path case mismatch for Linux build systems\nimport App from './components/App'; // Lowercase folder path: previously './Components/App'`,
+                        fixLanguage: 'javascript',
+                        notes: "Production Linux build system is case-sensitive, which failed to resolve components directory capitalized as 'Components'. Corrected path import to lowercase 'components'."
+                    }
+                ];
+                if (isActive) {
+                    setVaultItems(mockList);
+                    setLoading(false);
+                    if (mockList.length > 0) {
+                        setSelectedItemId(prev => {
+                            if (prev && mockList.some(m => m.id === prev)) return prev;
+                            return mockList[0].id;
+                        });
+                    }
+                }
+            }
+        };
+
+        fetchData();
+        return () => {
+            isActive = false;
+        };
+    }, [searchQuery]);
 
     // Retrieve current selected record
-    const selectedItem = vaultItems.find(item => item.id === selectedItemId) || vaultItems[0];
+    const filteredItems = vaultItems;
+    const selectedItem = vaultItems.find(item => item.id === selectedItemId) || vaultItems[0] || {
+        id: '#000',
+        title: 'Empty Vault',
+        languages: [],
+        originalError: 'No records available in database.',
+        validatedFix: '// Run database seed script \n// python seed/seed_memories.py',
+        fixLanguage: 'javascript',
+        notes: 'No records matching query.'
+    };
 
     return (
         <div className="vault-pane-container">
@@ -139,7 +194,9 @@ import App from './components/App'; // Lowercase folder path: previously './Comp
                     {/* Table Header Section */}
                     <div className="vault-list-summary-group">
                         <h1 className="vault-pane-title">Vault</h1>
-                        <span className="vault-pane-sub text-muted">1,248 Items</span>
+                        <span className="vault-pane-sub text-muted">
+                            {loading ? 'Loading...' : `${vaultItems.length} Items`}
+                        </span>
                     </div>
 
                     <div className="vault-items-table-wrapper">
@@ -157,7 +214,7 @@ import App from './components/App'; // Lowercase folder path: previously './Comp
                                 {filteredItems.length === 0 ? (
                                     <tr>
                                         <td colSpan="5" className="empty-table-state">
-                                            No records match your query.
+                                            {loading ? 'Fetching database records...' : 'No records match your query.'}
                                         </td>
                                     </tr>
                                 ) : (
@@ -192,7 +249,7 @@ import App from './components/App'; // Lowercase folder path: previously './Comp
                         <div className="details-meta-header">
                             <h2 className="details-item-title">{selectedItem.title}</h2>
                             <div className="details-tags-row">
-                                {selectedItem.languages.map((lang, idx) => {
+                                {selectedItem.languages && selectedItem.languages.map((lang, idx) => {
                                     let tagClass = 'tag-lang-gray';
                                     if (lang === 'Bug') tagClass = 'tag-lang-red';
                                     if (lang === 'Perf') tagClass = 'tag-lang-yellow';
@@ -219,21 +276,7 @@ import App from './components/App'; // Lowercase folder path: previously './Comp
                             <h3 className="section-label">VALIDATED FIX</h3>
                             <div className="validated-code-output">
                                 <pre className="code-pre">
-                                    {selectedItem.fixLanguage === 'csharp' ? (
-                                        <code>
-                                            <span className="comment">// Added null check for user service dependency</span><br />
-                                            <span className="keyword">if</span> (_userService == <span className="null-val">null</span>) {"{"}<br />
-                                            {"    "}_logger.LogError(<span className="string">"UserService is not registered!"</span>);<br />
-                                            {"    "}<span className="keyword">return</span> StatusCode(<span className="number">500</span>, <span className="string">"Internal Configuration Error"</span>);<br />
-                                            {"}"}<br />
-                                            <br />
-                                            <span className="keyword">var</span> user = <span className="keyword">await</span> _userService.AuthenticateAsync(request);
-                                        </code>
-                                    ) : (
-                                        <code>
-                                            {selectedItem.validatedFix}
-                                        </code>
-                                    )}
+                                    <code>{selectedItem.validatedFix}</code>
                                 </pre>
                             </div>
                         </div>
