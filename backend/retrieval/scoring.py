@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from db import get_conn
 from retrieval.embeddings import embed, from_blob, cosine
 
-CONFIDENCE_THRESHOLD = 0.55
+CONFIDENCE_THRESHOLD = 0.35  # semantic alone clears this for good matches
 FTS_CANDIDATE_LIMIT = 30
 TOP_K = 5
 
@@ -71,14 +71,17 @@ def retrieve(
     """
     # Build FTS query — tokenize problem text, join with OR
     fts_terms = " OR ".join(
-        f'"{w}"' for w in problem_text.split()[:20] if len(w) > 3
+        f'"{w}"' for w in problem_text.split()[:20] if len(w) > 1
     )
     if not fts_terms:
-        fts_terms = problem_text[:100]
+        fts_terms = f'"{problem_text[:50]}"'
 
-    rows = conn.execute(fts_sql, [fts_terms] + scope_params).fetchall()
+    try:
+        rows = conn.execute(fts_sql, [fts_terms] + scope_params).fetchall()
+    except Exception:
+        rows = []
 
-    # Fallback: if FTS returns nothing, scan all (still bounded by scope)
+    # Fallback: if FTS returns nothing or errors, scan all (bounded by scope)
     if not rows:
         fallback_sql = f"SELECT * FROM experiences WHERE 1=1{scope_clause} LIMIT {FTS_CANDIDATE_LIMIT}"
         rows = conn.execute(fallback_sql, scope_params).fetchall()
@@ -102,31 +105,38 @@ def retrieve(
             semantic = 0.0
 
         cand_errors = _parse_json_field(r.get("error_codes"), [])
-        cand_frameworks = _parse_json_field(
-            _parse_json_field(r.get("context"), {}).get("framework", [])
-            if isinstance(r.get("context"), dict)
-            else json.loads(r.get("context", "{}")).get("framework", []),
-            []
-        )
-        cand_language = (
-            _parse_json_field(r.get("context"), {}).get("language", "")
-            if isinstance(r.get("context"), dict)
-            else json.loads(r.get("context", "{}")).get("language", "")
-        )
+
+        # Parse context cleanly — it's always a JSON string from SQLite
+        ctx = _parse_json_field(r.get("context"), {})
+        if not isinstance(ctx, dict):
+            ctx = {}
+        cand_frameworks = ctx.get("framework", []) or []
+        cand_language = ctx.get("language", "") or ""
+
         cand_patterns = _parse_json_field(r.get("patterns"), [])
         cand_symptoms = _parse_json_field(r.get("symptoms"), [])
 
-        # Simple signal extraction from problem text
-        prob_errors: List[str] = []  # Could run regex here; keep lightweight
-        prob_frameworks: List[str] = []
-        prob_language = ""
-        prob_patterns: List[str] = []
-        prob_symptoms = problem_text.split(". ")[:5]
+        # Extract lightweight signals from problem text using regex
+        import re as _re
+        prob_tokens_lower = problem_text.lower().split()
+        # Detect frameworks in problem text
+        _fw_keywords = {
+            "fastapi": "fastapi", "django": "django", "flask": "flask",
+            "react": "react", "vue": "vue", "nextjs": "nextjs",
+            "sqlalchemy": "sqlalchemy", "pytest": "pytest", "nginx": "nginx",
+        }
+        prob_frameworks = [v for k, v in _fw_keywords.items() if k in prob_tokens_lower]
+        # Detect language in problem text
+        _lang_keywords = {"python": "python", "typescript": "typescript",
+                          "javascript": "javascript", "go": "go", "rust": "rust"}
+        prob_language = next((v for k, v in _lang_keywords.items() if k in prob_tokens_lower), "")
+        # Error codes (e.g. 422, 401, 500)
+        prob_errors = _re.findall(r'\b[45]\d{2}\b', problem_text)
 
-        error_match = 1.0 if (prob_errors and set(prob_errors) & set(cand_errors)) else 0.0
+        error_match = 1.0 if (prob_errors and set(prob_errors) & set(str(e) for e in cand_errors)) else 0.0
         framework_match = _jaccard(prob_frameworks, cand_frameworks)
         language_match = 1.0 if (prob_language and prob_language.lower() == cand_language.lower()) else 0.0
-        pattern_overlap = _jaccard(prob_patterns, cand_patterns)
+        pattern_overlap = _jaccard(prob_tokens_lower, set(" ".join(cand_patterns).lower().split()))
         symptom_overlap = _jaccard(problem_tokens, set(" ".join(cand_symptoms).lower().split()))
 
         score = (
