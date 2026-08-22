@@ -634,3 +634,174 @@ body {
   color: #f472b6;
   /* string token pink/rose */
 }
+
+/* Right Side Solutions Specific Styles */
+.past-solutions-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.solutions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.solutions-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.6px;
+}
+
+.link-icon {
+  color: var(--text-muted);
+}
+
+.meta-matches-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #c084fc;
+  background-color: rgba(192, 132, 252, 0.1);
+  padding: 2.5px 8px;
+  border-radius: 99px;
+  border: 1px solid rgba(192, 132, 252, 0.15);
+}
+
+.solutions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.solution-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.solution-card:hover {
+  border-color: var(--border-active);
+  transform: translateY(-1px);
+}
+
+.solution-card.active {
+  border-color: rgba(124, 58, 237, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Card Header info grid */
+.card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sol-meta-info {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Match Score Badges */
+.match-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.match-badge.green {
+  color: var(--accent-green);
+  background-color: var(--accent-green-light);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+}
+
+.match-badge.yellow {
+  color: var(--accent-yellow);
+  background-color: var(--accent-yellow-light);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+.match-badge.gray {
+  color: var(--text-muted);
+  background-color: var(--bg-hover);
+  border: 1px solid var(--border-color);
+}
+
+/* Titles */
+.sol-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+  letter-spacing: -0.1px;
+}
+
+/* Code Diff View */
+.sol-diff-box {
+  background-color: var(--bg-code);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+.diff-renderer {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.diff-line {
+  display: block;
+}
+
+.diff-line.diff-add {
+  color: #34d399;
+  /* emerald addition light green */
+  background-color: rgba(52, 211, 153, 0.06);
+}
+
+.diff-line.diff-remove {
+  color: #f87171;
+  /* light red deletion code */
+  background-color: rgba(248, 113, 113, 0.06);
+}
+
+.diff-line.normal {
+  color: var(--text-secondary);
+}
+
+/* Button Solution CTA styling */
+.btn-view-sol {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid var(--border-active);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+  text-align: center;
+}
+
+.btn-view-sol:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--text-muted);
+}

@@ -4,6 +4,7 @@ import Header from './components/Header';
 import StackTrace from './components/StackTrace';
 import CodeContext from './components/CodeContext';
 import Analysis from './components/Analysis';
+import PastSolutions from './components/PastSolutions';
 
 function App() {
   const [activeTab, setActiveTab] = useState('live-debugger');
@@ -54,8 +55,8 @@ function App() {
 
           {/* Right Panel Content */}
           <div className="right-panel">
-            {/* PastSolutions - Component Step 6 */}
-            <div className="placeholder-box">Past Solutions Placeholder</div>
+            {/* Relevant Past Solutions Matches list */}
+            <PastSolutions />
           </div>
         </div>
       </div>
