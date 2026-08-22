@@ -4,7 +4,7 @@ import React from 'react';
  * Header Component
  * Displays the error status header bar with dynamic reload and fix controls.
  */
-function Header({ onReload, onRunFix, isReloading, isFixApplied }) {
+function Header({ onReload, onRunFix, isReloading, isFixApplied, title = "Unhandled Promise Rejection", path = "src/modules/auth/oauth2.service.ts:142" }) {
     return (
         <div className="header-container-inner">
             {/* Target status details */}
@@ -16,13 +16,6 @@ function Header({ onReload, onRunFix, isReloading, isFixApplied }) {
                         <line x1="12" y1="9" x2="12" y2="13" />
                         <line x1="12" y1="17" x2="12.01" y2="17" />
                     </svg>
-                </div>
-
-                <div className="status-text-details">
-                    <h1 className="status-title">Unhandled Promise Rejection</h1>
-                    <span className="status-path-badge">
-                        src/modules/auth/oauth2.service.ts:142
-                    </span>
                 </div>
             </div>
 

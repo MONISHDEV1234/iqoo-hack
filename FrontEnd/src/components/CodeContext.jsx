@@ -2,66 +2,57 @@ import React from 'react';
 
 /**
  * CodeContext Component
- * Renders the file editor view with highlighted lines and crash details.
- * Connects with `isFixApplied` to demonstrate resolution dynamically.
+ * Renders the file editor view with dynamic context code blocks.
  */
-function CodeContext({ isFixApplied }) {
+function CodeContext({ value = '', onChange = () => { }, fileName = 'oauth2.service.ts', isFixApplied }) {
     return (
         <div className="section-card code-context-card">
             <div className="card-header">
                 <div className="header-left">
-                    <span className="card-title">CODE CONTEXT</span>
+                    <span className="card-title">CODE CONTEXT DESK</span>
                 </div>
                 <div className="header-right">
-                    <span className="file-name-badge">oauth2.service.ts</span>
+                    <span className="file-name-badge">{fileName}</span>
                 </div>
             </div>
 
-            <div className="code-editor-body">
-                {/* Line 140 */}
-                <div className="code-line">
-                    <span className="line-number">140</span>
-                    <span className="line-content">
-                        <span className="keyword">const</span> response = <span className="keyword">await</span> <span className="keyword">this</span>.httpService.post(tokenUrl, payload);
-                    </span>
-                </div>
+            <div className="code-editor-body" style={{ padding: '12px 16px' }}>
+                <textarea
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder="// Add local code context files here..."
+                    style={{
+                        width: '100%',
+                        height: '140px',
+                        background: 'transparent',
+                        border: 'none',
+                        resize: 'none',
+                        outline: 'none',
+                        color: 'var(--text-primary)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '12px',
+                        lineHeight: '1.7'
+                    }}
+                />
 
-                {/* Line 141 */}
-                <div className="code-line">
-                    <span className="line-number">141</span>
-                    <span className="line-content"></span>
-                </div>
-
-                {/* Line 142 (Crash / Highlight Line) */}
-                {!isFixApplied ? (
-                    <div className="code-line highlight-crash">
-                        <span className="line-number">142</span>
-                        <span className="line-content">
-                            <span className="keyword">const</span> token = response.data.accessToken; <span className="comment">// Crash: response.data is undefined</span>
-                        </span>
-                    </div>
-                ) : (
-                    <div className="code-line highlight-fix">
-                        <span className="line-number">142</span>
-                        <span className="line-content">
-                            <span className="keyword">const</span> token = response.data?.accessToken; <span className="comment">// Fix: Optional chaining safeguards access</span>
-                        </span>
+                {isFixApplied && (
+                    <div style={{
+                        marginTop: '10px',
+                        padding: '8px 12px',
+                        borderRadius: 'var(--radius-sm)',
+                        backgroundColor: 'var(--accent-green-light)',
+                        border: '1px solid rgba(16, 185, 129, 0.2)',
+                        color: 'var(--accent-green)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <span style={{ height: '6px', width: '6px', borderRadius: '50%', backgroundColor: 'var(--accent-green)', display: 'inline-block' }} />
+                        <span>Working fix applied successfully. Dynamic validation handles incoming requests correctly.</span>
                     </div>
                 )}
-
-                {/* Line 143 */}
-                <div className="code-line">
-                    <span className="line-number">143</span>
-                    <span className="line-content"></span>
-                </div>
-
-                {/* Line 144 */}
-                <div className="code-line">
-                    <span className="line-number">144</span>
-                    <span className="line-content">
-                        <span className="keyword">return</span> <span className="keyword">this</span>.cacheService.storeToken(userId, token);
-                    </span>
-                </div>
             </div>
         </div>
     );

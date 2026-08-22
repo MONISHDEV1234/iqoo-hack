@@ -8,6 +8,10 @@ Role 2 owns:  GET/POST /experiences,  POST /retrieve,  POST /report,
 import json
 import os
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, Query

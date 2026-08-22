@@ -2,26 +2,36 @@ import React, { useState } from 'react';
 
 /**
  * StackTrace Component
- * Renders the error stack trace box with clipboard integration.
+ * Renders the error stack trace box with preset buttons and interactive input area.
  */
-function StackTrace() {
+function StackTrace({ value = '', onChange = () => { } }) {
     const [copied, setCopied] = useState(false);
 
-    const stackTraceText = `TypeError: Cannot read properties of undefined (reading 'accessToken')
-    at OAuth2Service.exchangeCodeForToken (/var/www/app/src/modules/auth/oauth2.service.ts:142:36)
-    at processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async AuthController.callback (/var/www/app/src/modules/auth/oauth2.service.ts:80:20)`;
-
     const handleCopy = () => {
-        navigator.clipboard.writeText(stackTraceText);
+        navigator.clipboard.writeText(value);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const presets = [
+        {
+            label: 'CORS Preflight Error',
+            text: `Access to fetch at 'http://localhost:8000/api/users' from origin 'http://localhost:5173' has been blocked by CORS policy: Response to preflight request doesn't pass access control status check. OPTIONS failed.`
+        },
+        {
+            label: 'React Hydration Mismatch',
+            text: `Error: Hydration failed because the initial UI does not match what was rendered on the server.\nWarning: Expected server HTML to contain a matching <div> in <body>.`
+        },
+        {
+            label: 'Prisma DB Pool Limit',
+            text: `PrismaClientInitializationError: Connection pool limit reached (max_connections = 100). Could not acquire database client connection.`
+        }
+    ];
+
     return (
         <div className="section-card stack-trace-card">
             <div className="card-header">
-                <span className="card-title">STACK TRACE INPUT</span>
+                <span className="card-title">STACK TRACE & LOG INPUT</span>
                 <button
                     className="btn-copy"
                     onClick={handleCopy}
@@ -41,9 +51,53 @@ function StackTrace() {
                 </button>
             </div>
             <div className="stack-trace-body">
-                <pre className="stack-trace-code">
-                    {stackTraceText}
-                </pre>
+                <textarea
+                    className="stack-trace-code"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder="Paste console outputs or debug logs here..."
+                    style={{
+                        width: '100%',
+                        height: '110px',
+                        background: 'transparent',
+                        border: 'none',
+                        resize: 'none',
+                        outline: 'none',
+                        color: 'inherit',
+                        fontFamily: 'inherit',
+                        fontSize: 'inherit',
+                        lineHeight: 'inherit'
+                    }}
+                />
+
+                {/* Micro presets footer */}
+                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Presets:
+                    </span>
+                    {presets.map((p) => (
+                        <button
+                            key={p.label}
+                            type="button"
+                            onClick={() => onChange(p.text)}
+                            style={{
+                                border: '1px solid var(--border-color)',
+                                padding: '3px 8px',
+                                borderRadius: 'var(--radius-sm)',
+                                background: 'var(--bg-app)',
+                                color: 'var(--text-secondary)',
+                                fontSize: '10px',
+                                fontFamily: 'var(--font-mono)',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onMouseOver={(e) => { e.target.style.borderColor = 'var(--accent-purple)'; e.target.style.color = 'var(--text-active)'; }}
+                            onMouseOut={(e) => { e.target.style.borderColor = 'var(--border-color)'; e.target.style.color = 'var(--text-secondary)'; }}
+                        >
+                            {p.label}
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );
