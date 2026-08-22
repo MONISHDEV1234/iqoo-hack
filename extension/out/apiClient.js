@@ -42,7 +42,7 @@ exports.ApiClient = void 0;
 const vscode = __importStar(require("vscode"));
 function getBaseUrl() {
     const cfg = vscode.workspace.getConfiguration("mistakememo");
-    return cfg.get("backendUrl", "http://localhost:8000");
+    return cfg.get("backendUrl", "https://devcresthack.onrender.com");
 }
 async function post(path, body) {
     const res = await fetch(`${getBaseUrl()}${path}`, {

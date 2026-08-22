@@ -8,7 +8,7 @@ import * as vscode from "vscode";
 
 function getBaseUrl(): string {
   const cfg = vscode.workspace.getConfiguration("mistakememo");
-  return cfg.get<string>("backendUrl", "http://localhost:8000");
+  return cfg.get<string>("backendUrl", "https://devcresthack.onrender.com");
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
