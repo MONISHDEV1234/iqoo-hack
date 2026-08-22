@@ -173,47 +173,51 @@ Respond with ONLY strict JSON, no markdown fences, in this exact shape:
  * the reliability principle from the architecture doc ("LLM/embeddings
  * unavailable -> retrieval still works").
  */
-app.post('/api/retrieve', async (req, res) => {
+// Core retrieval logic, factored out so /api/retrieve and /api/chat share
+// one implementation instead of drifting apart over time.
+async function runRetrieval(queryText, { logRecall = true, scopes = null } = {}) {
+  const { tokens: queryTokens } = extractQuerySignals(queryText);
+  let experiences = db.getAllExperiences();
+  if (scopes) experiences = experiences.filter(e => scopes.includes(e.scope));
+
+  const ftsScores = db.ftsSearch(queryText, experiences.length || 50);
+
+  let queryEmbedding = null;
+  let embeddingAvailable = true;
   try {
-    const { queryText } = req.body;
-    if (!queryText || !queryText.trim()) return res.status(400).json({ error: 'queryText is required' });
+    queryEmbedding = await geminiEmbed(queryText);
+  } catch (embedErr) {
+    embeddingAvailable = false;
+  }
 
-    const { tokens: queryTokens } = extractQuerySignals(queryText);
-    const experiences = db.getAllExperiences();
+  const scored = experiences.map(exp => {
+    const semanticSim = embeddingAvailable ? cosineSimilarity(queryEmbedding, exp.embedding) : 0;
+    const lexicalOverlap = ftsScores[exp.id] || 0;
+    const techMatch = techMatchFeature(queryTokens, exp);
+    const patternMatch = patternMatchFeature(queryTokens, exp);
 
-    // Real SQLite FTS5 lexical candidate scores (id -> normalized 0..1 score)
-    const ftsScores = db.ftsSearch(queryText, experiences.length || 50);
+    const similarity = embeddingAvailable
+      ? scoreRelevance({ semanticSim, lexicalOverlap, techMatch, patternMatch })
+      : lexicalOverlap;
 
-    let queryEmbedding = null;
-    let embeddingAvailable = true;
-    try {
-      queryEmbedding = await geminiEmbed(queryText);
-    } catch (embedErr) {
-      embeddingAvailable = false; // degrade gracefully instead of failing the whole request
-    }
-
-    const scored = experiences.map(exp => {
-      const semanticSim = embeddingAvailable ? cosineSimilarity(queryEmbedding, exp.embedding) : 0;
-      const lexicalOverlap = ftsScores[exp.id] || 0;
-      const techMatch = techMatchFeature(queryTokens, exp);
-      const patternMatch = patternMatchFeature(queryTokens, exp);
-
-      const similarity = embeddingAvailable
-        ? scoreRelevance({ semanticSim, lexicalOverlap, techMatch, patternMatch })
-        : lexicalOverlap; // fallback: FTS5-only ranking when embeddings are unavailable
-
-      return {
-        ...clean(exp),
-        similarity: Number(similarity.toFixed(4)),
+    return {
+      ...clean(exp),
+      similarity: Number(similarity.toFixed(4)),
+      semanticSim: Number(semanticSim.toFixed(4)),
+      lexicalOverlap: Number(lexicalOverlap.toFixed(4)),
+      feature_breakdown: {
         semanticSim: Number(semanticSim.toFixed(4)),
-        lexicalOverlap: Number(lexicalOverlap.toFixed(4))
-      };
-    })
-      .filter(e => e.similarity >= (embeddingAvailable ? 0.5 : 0.15))
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, 3);
+        lexicalOverlap: Number(lexicalOverlap.toFixed(4)),
+        techMatch,
+        patternMatch
+      }
+    };
+  })
+    .filter(e => e.similarity >= (embeddingAvailable ? 0.5 : 0.15))
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, 3);
 
-    // log recall events (doc's recall_events table) for future retraining data
+  if (logRecall) {
     for (const m of scored) {
       db.insertRecallEvent({
         id: crypto.randomUUID(),
@@ -224,8 +228,17 @@ app.post('/api/retrieve', async (req, res) => {
         created_at: new Date().toISOString()
       });
     }
+  }
 
-    res.json({ matches: scored, degraded: !embeddingAvailable });
+  return { matches: scored, degraded: !embeddingAvailable };
+}
+
+app.post('/api/retrieve', async (req, res) => {
+  try {
+    const { queryText } = req.body;
+    if (!queryText || !queryText.trim()) return res.status(400).json({ error: 'queryText is required' });
+    const result = await runRetrieval(queryText);
+    res.json(result);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -293,6 +306,97 @@ app.get('/api/experiences', (req, res) => {
   res.json(experiences);
 });
 
+app.get('/api/experiences/:id', (req, res) => {
+  const exp = db.getExperienceById(req.params.id);
+  if (!exp) return res.status(404).json({ error: 'not found' });
+  res.json(clean(exp));
+});
+
+/**
+ * GET /api/dashboard/stats — progress dashboard aggregates.
+ * Pure SQL/JS aggregation, no LLM call, so this always works even if the
+ * Gemini API is unavailable.
+ */
+app.get('/api/dashboard/stats', (req, res) => {
+  try {
+    res.json(db.getDashboardStats());
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/**
+ * GET /api/chat/patterns — top recurring patterns across all experiences.
+ */
+app.get('/api/chat/patterns', (req, res) => {
+  try {
+    res.json({ patterns: db.getTopPatterns(10) });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/**
+ * POST /api/chat — lightweight coach chatbot.
+ * Retrieves relevant experiences across project+universal scope, then asks
+ * Gemini to answer AS A COACH, citing experience ids. If the LLM call fails
+ * (or there's no API key), degrades to a structured list of the retrieved
+ * experiences instead of crashing or returning nothing — same reliability
+ * principle as /api/retrieve.
+ */
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message || !message.trim()) return res.status(400).json({ error: 'message is required' });
+
+    const retrieval = await runRetrieval(message, { logRecall: true, scopes: ['project', 'universal'] });
+
+    if (retrieval.matches.length === 0) {
+      return res.json({
+        reply: "No pattern yet — I don't have any past experience that looks related to this. Once you log a mistake here, I'll be able to reference it next time something similar comes up.",
+        citedExperienceIds: [],
+        degraded: retrieval.degraded
+      });
+    }
+
+    const experienceBlock = retrieval.matches.map((e, i) =>
+      `[${e.id}] ${e.problem_summary} — failed: ${(e.failed_approaches || []).join('; ') || 'none recorded'} — worked: ${e.successful_approach || 'unresolved'} — lesson: ${e.lesson}`
+    ).join('\n');
+
+    try {
+      if (!API_KEY) throw new Error('no api key'); // force the fallback path below
+      const prompt = `You are a coding coach with access to the developer's past debugging experiences. Answer their message using ONLY the experiences below as grounding. Cite experience ids in square brackets like [id] when you reference one. Be concise (under 120 words).
+
+DEVELOPER MESSAGE:
+"""
+${message}
+"""
+
+RELEVANT PAST EXPERIENCES:
+${experienceBlock}`;
+
+      const reply = await geminiGenerate(prompt);
+      res.json({
+        reply,
+        citedExperienceIds: retrieval.matches.map(m => m.id),
+        degraded: retrieval.degraded
+      });
+    } catch (llmErr) {
+      // LLM unavailable -> degrade to a formatted experience list, never crash
+      const fallbackReply = 'AI coaching is unavailable right now, but here is what I found in your memory:\n\n' +
+        retrieval.matches.map(e => `• ${e.problem_summary}\n  Worked before: ${e.successful_approach || 'unresolved'}\n  Lesson: ${e.lesson}`).join('\n\n');
+      res.json({
+        reply: fallbackReply,
+        citedExperienceIds: retrieval.matches.map(m => m.id),
+        degraded: true,
+        llmUnavailable: true
+      });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.delete('/api/experiences/:id', (req, res) => {
   db.deleteExperience(req.params.id);
   res.json({ deleted: 1 });
@@ -324,7 +428,99 @@ app.post('/api/seed-demo', async (req, res) => {
         root_cause: 'mixing .then() chains with async/await caused a rejected inner promise to bypass the outer catch',
         solution: 'rewrote the function as fully async/await with one try/catch boundary',
         lesson: "don't mix .then() chains and async/await in the same function — pick one style per function",
-        confidence: 'medium'
+        confidence: 'medium',
+        scope: 'project'
+      },
+      {
+        problem_summary: "CORS error blocking API calls from the frontend in local dev",
+        symptoms: ["Access-Control-Allow-Origin header missing", "fetch failed with CORS error in console"],
+        technologies: ['express', 'cors', 'fetch'],
+        patterns: ['cors', 'config'],
+        failed_approaches: ['tried adding headers manually per-route, missed the preflight OPTIONS request'],
+        successful_approach: 'installed the cors middleware package and applied it globally before routes',
+        root_cause: 'browser preflight OPTIONS request was never handled, so the real request never left the browser',
+        solution: "app.use(cors()) before any route definitions",
+        lesson: 'CORS middleware needs to be registered before routes, and must handle the OPTIONS preflight, not just the real request',
+        confidence: 'high',
+        scope: 'universal'
+      },
+      {
+        problem_summary: 'Off-by-one error causing the last item in a paginated list to be skipped',
+        symptoms: ['last row missing from results', 'pagination total count looked right but display was short by one'],
+        technologies: ['sql', 'pagination'],
+        patterns: ['off-by-one', 'logic'],
+        failed_approaches: ['adjusted LIMIT without checking OFFSET math, made it worse'],
+        successful_approach: 'recalculated offset as (page - 1) * pageSize and added a unit test with a known dataset',
+        root_cause: 'offset formula used `page * pageSize` instead of `(page - 1) * pageSize`',
+        solution: 'fixed offset formula and added a regression test for page boundaries',
+        lesson: 'always unit-test pagination math with a small, known dataset before trusting it against real data',
+        confidence: 'high',
+        scope: 'universal'
+      },
+      {
+        problem_summary: 'React state update not reflected immediately after setState call',
+        symptoms: ['console.log right after setState shows the old value', 'UI updates a render late'],
+        technologies: ['react', 'javascript'],
+        patterns: ['state-management', 'async-await'],
+        failed_approaches: ['tried reading state synchronously right after calling the setter'],
+        successful_approach: 'used a useEffect hook keyed on the state variable to react to the update, instead of reading it inline',
+        root_cause: 'React state updates are asynchronous/batched, so state is not updated in the same tick as the setter call',
+        solution: 'moved the dependent logic into useEffect([stateVar])',
+        lesson: 'never assume state is updated immediately after calling its setter — use an effect or the updater-function form instead',
+        confidence: 'high',
+        scope: 'project'
+      },
+      {
+        problem_summary: 'Database migration failed halfway through, leaving schema in an inconsistent state',
+        symptoms: ['migration script exited with error after creating some but not all tables', 'app crashed on next boot with "table not found"'],
+        technologies: ['postgresql', 'migrations'],
+        patterns: ['database', 'transactions'],
+        failed_approaches: ['manually re-ran the migration script, which failed again because some tables already existed'],
+        successful_approach: 'wrapped the entire migration in a single transaction so a failure rolls back everything, then fixed the actual bug and re-ran cleanly',
+        root_cause: 'migration script was not transactional, so a partial failure left a half-applied schema',
+        solution: 'wrap migrations in BEGIN/COMMIT with ROLLBACK on error',
+        lesson: 'schema migrations should always be transactional — partial application is worse than no application',
+        confidence: 'medium',
+        scope: 'universal'
+      },
+      {
+        problem_summary: 'Infinite re-render loop in a React component',
+        symptoms: ['browser tab freezes', '"Maximum update depth exceeded" error in console'],
+        technologies: ['react'],
+        patterns: ['state-management', 'render-loop'],
+        failed_approaches: ['removed the dependency array from useEffect entirely to "fix" the warning, made the loop worse'],
+        successful_approach: 'identified the object being recreated on every render and memoized it with useMemo before passing it as a dependency',
+        root_cause: 'a new object/array literal was created on every render and used inside a useEffect dependency array, so the effect never stabilized',
+        solution: 'wrapped the object in useMemo so its reference is stable across renders',
+        lesson: 'objects and arrays in dependency arrays need stable references — memoize them, or the effect will refire every render',
+        confidence: 'high',
+        scope: 'project'
+      },
+      {
+        problem_summary: 'Docker container works locally but crashes immediately in production',
+        symptoms: ['exit code 1 with no useful log output', 'works fine with `docker run` locally'],
+        technologies: ['docker', 'node'],
+        patterns: ['deployment', 'config'],
+        failed_approaches: ['assumed it was a missing environment variable and added several blindly'],
+        successful_approach: 'ran the exact production image locally with `docker logs` and found the real error: a missing native dependency in the slim base image',
+        root_cause: 'the production Dockerfile used a slim base image missing a native library the app depended on at runtime',
+        solution: 'switched to a base image with the required native libraries, or installed them explicitly in the Dockerfile',
+        lesson: "when a container behaves differently in prod, reproduce with the EXACT same image and check logs before guessing at env vars",
+        confidence: 'medium',
+        scope: 'universal'
+      },
+      {
+        problem_summary: 'API returns 401 Unauthorized intermittently, not consistently',
+        symptoms: ['most requests succeed', 'roughly 1 in 20 requests returns 401 with a valid-looking token'],
+        technologies: ['jwt', 'api', 'authentication'],
+        patterns: ['auth', 'race-condition'],
+        failed_approaches: ['assumed the token itself was invalid and regenerated it, problem persisted'],
+        successful_approach: 'found that token refresh logic had a race condition: a request could fire with an about-to-expire token during the refresh window',
+        root_cause: 'no locking/queueing around token refresh, so concurrent requests could use a token mid-expiry',
+        solution: 'added a single in-flight refresh promise that concurrent requests await instead of each triggering their own refresh',
+        lesson: 'intermittent auth failures under concurrency usually point to a race condition in token refresh, not the token itself',
+        confidence: 'medium',
+        scope: 'project'
       }
     ];
 
@@ -333,13 +529,14 @@ app.post('/api/seed-demo', async (req, res) => {
       const embedding = await geminiEmbed(
         `${s.problem_summary}\n${s.symptoms.join(' ')}\n${s.technologies.join(' ')}\n${s.root_cause}\n${s.solution}\n${s.lesson}`
       );
+      const { scope, ...rest } = s;
       db.insertExperience({
         id: crypto.randomUUID(),
-        scope: 'project',
-        ...s,
+        scope: scope || 'project',
+        ...rest,
         embedding,
         source: 'seed-demo',
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString()
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * Math.floor(Math.random() * 10 + 1)).toISOString()
       });
       seededCount++;
     }

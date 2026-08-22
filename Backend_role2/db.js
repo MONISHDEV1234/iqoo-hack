@@ -213,6 +213,82 @@ function deleteExperience(id) {
   persist();
 }
 
+function getExperienceById(id) {
+  const res = db.exec('SELECT rowid, * FROM experiences WHERE id = ?', [id]);
+  if (res.length === 0 || res[0].values.length === 0) return null;
+  const cols = res[0].columns.filter(c => c !== 'rowid');
+  const rowidIdx = res[0].columns.indexOf('rowid');
+  const row = res[0].values[0].filter((_, i) => i !== rowidIdx);
+  return rowToExperience(cols, row);
+}
+
+// Aggregate counts for the dashboard: totals, by-scope, by-pattern
+// ("category" surrogate — the schema doesn't have a discrete category
+// column, so patterns/technologies double as the classification axis),
+// and recall/report usage counts pulled from recall_events.
+function getDashboardStats() {
+  const experiences = getAllExperiences();
+
+  const byScope = {};
+  const byPattern = {};
+  const byTechnology = {};
+  const byConfidence = {};
+
+  for (const exp of experiences) {
+    byScope[exp.scope] = (byScope[exp.scope] || 0) + 1;
+    byConfidence[exp.confidence] = (byConfidence[exp.confidence] || 0) + 1;
+    for (const p of exp.patterns || []) byPattern[p] = (byPattern[p] || 0) + 1;
+    for (const t of exp.technologies || []) byTechnology[t] = (byTechnology[t] || 0) + 1;
+  }
+
+  const byDay = {};
+  for (const exp of experiences) {
+    const day = (exp.createdAt || '').slice(0, 10);
+    if (day) byDay[day] = (byDay[day] || 0) + 1;
+  }
+  const timeline = Object.entries(byDay)
+    .sort((a, b) => new Date(a[0]) - new Date(b[0]))
+    .map(([date, count]) => ({ date, count }));
+
+  const recallRes = db.exec('SELECT COUNT(*) FROM recall_events');
+  const totalRecalls = recallRes[0] ? recallRes[0].values[0][0] : 0;
+
+  const usedInReportRes = db.exec('SELECT COUNT(*) FROM recall_events WHERE used_in_report = 1');
+  const usedInReportCount = usedInReportRes[0] ? usedInReportRes[0].values[0][0] : 0;
+
+  const topPatterns = Object.entries(byPattern)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([pattern, count]) => ({ pattern, count }));
+
+  return {
+    total_experiences: experiences.length,
+    total_recalls: totalRecalls,
+    used_in_report_count: usedInReportCount,
+    by_scope: byScope,
+    by_pattern: byPattern,
+    by_technology: byTechnology,
+    by_confidence: byConfidence,
+    top_patterns: topPatterns,
+    timeline
+  };
+}
+
+// Pure-SQL pattern/technology aggregation, matching the "GET /chat/patterns"
+// concept from the architecture doc — no JSON1 json_each needed since
+// patterns/technologies are parsed in JS from the TEXT columns already.
+function getTopPatterns(limit = 10) {
+  const experiences = getAllExperiences();
+  const counts = {};
+  for (const exp of experiences) {
+    for (const p of exp.patterns || []) counts[p] = (counts[p] || 0) + 1;
+  }
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([pattern, count]) => ({ pattern, count }));
+}
+
 // FTS5 lexical candidate search. Returns experience ids ranked by SQLite's
 // built-in bm25 relevance score (lower = more relevant, so we negate it
 // to a 0..1-ish "higher is better" number for blending with semantic score).
@@ -264,7 +340,10 @@ module.exports = {
   initDb,
   insertExperience,
   getAllExperiences,
+  getExperienceById,
   deleteExperience,
   ftsSearch,
   insertRecallEvent,
+  getDashboardStats,
+  getTopPatterns,
 };

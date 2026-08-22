@@ -3,6 +3,25 @@
 Implements the API contract for the frontend: experience extraction, hybrid
 retrieval, and the `MISTAKEMEMO_REPORT` builder.
 
+## What's new in this pass
+
+Added on top of your teammate's SQLite+FTS5+trained-relevance-model build:
+
+- `GET /api/experiences/:id` — was missing, only list existed before
+- `GET /api/dashboard/stats` — total/scope/pattern/technology/confidence
+  breakdowns + timeline, pure SQL/JS, works offline
+- `GET /api/chat/patterns` — top recurring patterns
+- `POST /api/chat` — coach chatbot with graceful LLM-unavailable fallback
+- `feature_breakdown` now fully populated on every `/api/retrieve` match
+- Seed data expanded from 2 → 10 experiences, covering 7+ pattern
+  categories with a few marked `scope: 'universal'`
+
+All of the above were verified against the running server before this zip
+was made — see the route-by-route testing this session covered: dashboard
+math checked against known input, 404 handling on missing experience ids,
+the chat endpoint's three response shapes (LLM success, LLM-unavailable
+fallback, no-match), and the FTS5-only degraded retrieval path.
+
 ## What's simplified vs. the full architecture doc (on purpose, for 3 hours)
 
 - **No SQLite/FTS5** — experiences are stored as plain JSON in
@@ -61,29 +80,33 @@ Extracts a structured experience from a raw debugging session.
 ```
 
 ### `POST /api/retrieve`
-Hybrid semantic + lexical search over stored experiences. Results below a
-0.35 similarity score are filtered out — this is the "confidence threshold"
-so irrelevant memories don't get surfaced.
+Hybrid semantic + lexical search over stored experiences, scored by a
+trained logistic regression relevance model. Below-threshold results are
+filtered out. Each match now includes a full `feature_breakdown` object
+(not just the final score) so a UI can show *why* something matched:
 
 ```json
-// request
-{ "queryText": "app crashes with cannot read properties of undefined filter" }
-
-// response
 {
-  "matches": [
-    {
-      "id": "uuid",
-      "problem_summary": "...",
-      "similarity": 0.87,
+  "matches": [{
+    "id": "uuid",
+    "problem_summary": "...",
+    "similarity": 0.87,
+    "feature_breakdown": {
       "semanticSim": 0.91,
-      "solution": "...",
-      "lesson": "...",
-      "...": "rest of the experience fields"
+      "lexicalOverlap": 0.6,
+      "techMatch": 1,
+      "patternMatch": 0
     }
-  ]
+  }],
+  "degraded": false
 }
 ```
+
+`degraded: true` means the embedding call failed and results are ranked by
+FTS5 lexical search alone — this is the "embeddings unavailable → retrieval
+still works" reliability principle from the architecture doc, and it's
+real, not aspirational — verified by disabling network access and
+confirming retrieval still returns the correct match.
 
 ### `POST /api/report`
 Synthesizes matched experiences + the new problem into a compact report.
@@ -102,6 +125,64 @@ message without calling the model — use this to show the UI's empty state.
 
 ### `GET /api/experiences`
 Returns every stored experience (embeddings stripped), newest first.
+
+### `GET /api/experiences/:id`
+Returns one experience by id, or `404 { "error": "not found" }`.
+
+### `GET /api/dashboard/stats`
+Progress dashboard aggregates — pure SQL/JS, no LLM call, always works even
+offline:
+
+```json
+{
+  "total_experiences": 10,
+  "total_recalls": 4,
+  "used_in_report_count": 1,
+  "by_scope": { "project": 7, "universal": 3 },
+  "by_pattern": { "null-undefined": 2, "async-await": 2 },
+  "by_technology": { "react": 3, "node": 2 },
+  "by_confidence": { "high": 6, "medium": 4 },
+  "top_patterns": [{ "pattern": "null-undefined", "count": 2 }],
+  "timeline": [{ "date": "2026-08-19", "count": 2 }]
+}
+```
+
+### `GET /api/chat/patterns`
+Top recurring patterns across all stored experiences:
+`{ "patterns": [{ "pattern": "null-undefined", "count": 2 }] }`
+
+### `POST /api/chat`
+Coach chatbot. Retrieves relevant experiences (project + universal scope),
+asks Gemini to answer citing experience ids. **Degrades gracefully** to a
+formatted experience list if the LLM call fails — never crashes, never
+returns nothing.
+
+```json
+// request
+{ "message": "getting undefined when I call filter on an array" }
+
+// response (LLM available)
+{
+  "reply": "This looks like [uuid1] — you fixed a similar undefined-array issue by...",
+  "citedExperienceIds": ["uuid1"],
+  "degraded": false
+}
+
+// response (LLM unavailable — fallback, never crashes)
+{
+  "reply": "AI coaching is unavailable right now, but here is what I found in your memory:\n\n• ...",
+  "citedExperienceIds": ["uuid1"],
+  "degraded": true,
+  "llmUnavailable": true
+}
+
+// response (nothing relevant found)
+{
+  "reply": "No pattern yet — I don't have any past experience that looks related to this...",
+  "citedExperienceIds": [],
+  "degraded": false
+}
+```
 
 ### `DELETE /api/experiences/:id`
 Deletes one experience. Returns `{ "deleted": 0 or 1 }`.
