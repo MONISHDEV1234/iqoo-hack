@@ -1,0 +1,165 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+
+/* ----------------------------------------------------
+   MemCode Dashboard Design System & Styling
+   ---------------------------------------------------- */
+
+:root {
+  /* Color Palette */
+  --bg-app: #08090c;
+  --bg-sidebar: #0f1015;
+  --bg-header: #12131a;
+  --bg-card: #161822;
+  --bg-code: #0b0c11;
+
+  /* Borders */
+  --border-color: #212431;
+  --border-active: #32374b;
+
+  /* Text */
+  --text-active: #ffffff;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Accents */
+  --accent-purple: #7c3aed;
+  --accent-purple-light: rgba(124, 58, 237, 0.15);
+  --accent-purple-border: #9f7aea;
+  --accent-red: #ef4444;
+  --accent-red-light: rgba(239, 68, 68, 0.1);
+  --accent-red-hover: #f87171;
+  --accent-green: #10b981;
+  --accent-green-light: rgba(16, 185, 129, 0.1);
+  --accent-yellow: #f59e0b;
+  --accent-yellow-light: rgba(245, 158, 11, 0.15);
+  --accent-blue: #3b82f6;
+  --accent-blue-light: rgba(59, 130, 246, 0.1);
+
+  /* Border Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  /* Shadows */
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* Reset / Core styles */
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 13.5px;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Outer Scaffolding App Container */
+.app-container {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Base Sidebar layout styling */
+.app-sidebar {
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Main Frame area */
+.main-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* App Header styling */
+.header-container {
+  height: 68px;
+  background-color: var(--bg-header);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+/* Scrollable Inner Panel layout */
+.dashboard-content {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  overflow-y: auto;
+  gap: 24px;
+  padding: 24px;
+  background-color: var(--bg-app);
+}
+
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  /* Prevents text elements/code context from expanding out of boundary */
+}
+
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* Custom Card scaffolding placeholder */
+.placeholder-box {
+  background-color: var(--bg-card);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-weight: 500;
+  min-height: 140px;
+}
