@@ -1,0 +1,57 @@
+{
+  "name": "mistakememo",
+  "displayName": "MistakeMemo",
+  "description": "Local-first experience-learning layer for AI-assisted debugging.",
+  "version": "0.1.0",
+  "engines": { "vscode": "^1.85.0" },
+  "publisher": "mistakememo",
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "mistakememo.toggleCapture",
+        "title": "MistakeMemo: Toggle Capture"
+      },
+      {
+        "command": "mistakememo.extractNow",
+        "title": "MistakeMemo: Extract Now"
+      },
+      {
+        "command": "mistakememo.openSidebar",
+        "title": "MistakeMemo: Open Sidebar"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mistakememo-sidebar",
+          "title": "MistakeMemo",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "mistakememo-sidebar": [
+        {
+          "type": "webview",
+          "id": "mistakememo.sidebarView",
+          "name": "MistakeMemo"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  }
+}
