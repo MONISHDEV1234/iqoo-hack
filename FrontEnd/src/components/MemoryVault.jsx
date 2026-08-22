@@ -20,8 +20,8 @@ function MemoryVault() {
         const fetchData = async () => {
             try {
                 const url = searchQuery
-                    ? `http://localhost:8000/experiences?q=${encodeURIComponent(searchQuery)}`
-                    : 'http://localhost:8000/experiences?limit=100';
+                    ? `https://devcresthack.onrender.com/experiences?q=${encodeURIComponent(searchQuery)}`
+                    : 'https://devcresthack.onrender.com/experiences?limit=100';
 
                 const res = await fetch(url);
                 if (!res.ok) throw new Error('Network error loading experiences');

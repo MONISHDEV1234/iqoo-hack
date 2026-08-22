@@ -26,11 +26,11 @@ function History() {
         let isActive = true;
         const fetchHistoryData = async () => {
             try {
-                const statsRes = await fetch('http://localhost:8000/dashboard/stats');
+                const statsRes = await fetch('https://devcresthack.onrender.com/dashboard/stats');
                 if (!statsRes.ok) throw new Error('Stats API failed');
                 const statsData = await statsRes.json();
 
-                const experiencesRes = await fetch('http://localhost:8000/experiences?limit=50');
+                const experiencesRes = await fetch('https://devcresthack.onrender.com/experiences?limit=50');
                 if (!experiencesRes.ok) throw new Error('Experiences API failed');
                 const experiencesData = await experiencesRes.json();
 

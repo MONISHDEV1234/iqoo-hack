@@ -34,7 +34,7 @@ function App() {
 
   // Fetch count statistics on mount
   useEffect(() => {
-    fetch('http://localhost:8000/dashboard/stats')
+    fetch('https://devcresthack.onrender.com/dashboard/stats')
       .then(res => {
         if (!res.ok) throw new Error();
         return res.json();
@@ -85,7 +85,7 @@ function App() {
 
     try {
       // 1. Perform SQLite FTS + Cosine retrieval
-      const retrieveRes = await fetch('http://localhost:8000/retrieve', {
+      const retrieveRes = await fetch('https://devcresthack.onrender.com/retrieve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ problem_text: stackTrace })
@@ -107,7 +107,7 @@ function App() {
       }
 
       // 3. Ask AI Debugger
-      const askRes = await fetch('http://localhost:8000/llm/ask', {
+      const askRes = await fetch('https://devcresthack.onrender.com/llm/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -200,7 +200,7 @@ function App() {
     };
 
     try {
-      const res = await fetch('http://localhost:8000/experiences', {
+      const res = await fetch('https://devcresthack.onrender.com/experiences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
