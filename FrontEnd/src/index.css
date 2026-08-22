@@ -1305,3 +1305,113 @@ body {
     flex-direction: column;
   }
 }
+
+/* ----------------------------------------------------
+   Memory Vault High-Fidelity Pane Styles
+   ---------------------------------------------------- */
+.vault-pane-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--bg-app);
+}
+
+.vault-top-bar {
+  height: 68px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+.vault-search-container {
+  display: flex;
+  align-items: center;
+  background-color: rgba(18, 19, 26, 0.4);
+  border: 1px solid var(--border-color);
+  border-radius: 99px;
+  padding: 8px 16px;
+  width: 100%;
+  max-width: 520px;
+  gap: 12px;
+  transition: border-color 0.2s ease;
+}
+
+.vault-search-container:focus-within {
+  border-color: var(--accent-purple);
+}
+
+.search-icon-wrapper {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.vault-search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13.5px;
+  width: 100%;
+}
+
+.vault-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.btn-filter-vault {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  transition: color 0.2s ease;
+}
+
+.btn-filter-vault:hover {
+  color: var(--text-primary);
+}
+
+.vault-workspace-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100% - 68px);
+}
+
+.vault-table-column {
+  border-right: 1px solid var(--border-color);
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.vault-details-column {
+  background-color: var(--bg-app);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 900px) {
+  .vault-workspace-grid {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+    height: auto;
+  }
+
+  .vault-table-column {
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px;
+  }
+}
