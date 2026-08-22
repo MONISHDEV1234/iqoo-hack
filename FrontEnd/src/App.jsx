@@ -1,14 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
+import Sidebar from './components/Sidebar';
 
 function App() {
+  const [activeTab, setActiveTab] = useState('live-debugger');
+
   return (
     <div className="app-container">
-      {/* Sidebar - Component Step 2 */}
-      <aside className="app-sidebar">
-        <div style={{ padding: '24px', color: 'var(--text-muted)' }}>
-          Sidebar Placeholder
-        </div>
-      </aside>
+      {/* Sidebar Navigation */}
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Main Content Area */}
       <div className="main-frame">
