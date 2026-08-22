@@ -388,3 +388,160 @@ body {
   font-weight: 500;
   min-height: 140px;
 }
+
+/* ----------------------------------------------------
+   Section Cards (General Panel Layouts)
+   ---------------------------------------------------- */
+.section-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  transition: border-color 0.2s ease;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: rgba(18, 19, 26, 0.4);
+}
+
+.card-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.8px;
+}
+
+/* Stack Trace Specific Styles */
+.stack-trace-card {
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.stack-trace-card .card-title {
+  color: #fc8181;
+}
+
+.stack-trace-body {
+  padding: 16px 20px;
+  background-color: rgba(11, 12, 17, 0.5);
+  overflow-x: auto;
+}
+
+.stack-trace-code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #fca5a5;
+  /* light red error code */
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.6;
+}
+
+.btn-copy {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+}
+
+.btn-copy:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-hover);
+}
+
+/* Code Context Specific Styles */
+.code-context-card {
+  border-color: var(--border-color);
+}
+
+.file-name-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  background-color: var(--bg-code);
+  border: 1px solid var(--border-active);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.code-editor-body {
+  padding: 14px 0;
+  background-color: var(--bg-code);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-x: auto;
+}
+
+.code-line {
+  display: flex;
+  padding: 1px 20px;
+  position: relative;
+}
+
+.line-number {
+  color: var(--text-muted);
+  width: 32px;
+  text-align: right;
+  margin-right: 20px;
+  user-select: none;
+  display: inline-block;
+}
+
+.line-content {
+  color: var(--text-primary);
+  white-space: pre;
+}
+
+/* Syntax Highlighting */
+.keyword {
+  color: #c084fc;
+  /* purple keyword */
+  font-weight: 500;
+}
+
+.comment {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Crashed line override */
+.code-line.highlight-crash {
+  background-color: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid var(--accent-red);
+  padding-left: 17px;
+}
+
+.code-line.highlight-crash .line-number {
+  color: rgba(239, 68, 68, 0.7);
+}
+
+.code-line.highlight-crash .comment {
+  color: #fca5a5;
+}
+
+/* Fixed line override */
+.code-line.highlight-fix {
+  background-color: rgba(16, 185, 129, 0.08);
+  border-left: 3px solid var(--accent-green);
+  padding-left: 17px;
+}
+
+.code-line.highlight-fix .line-number {
+  color: rgba(16, 185, 129, 0.7);
+}
+
+.code-line.highlight-fix .comment {
+  color: var(--accent-green);
+}

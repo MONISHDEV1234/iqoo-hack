@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import StackTrace from './components/StackTrace';
+import CodeContext from './components/CodeContext';
 
 function App() {
   const [activeTab, setActiveTab] = useState('live-debugger');
@@ -39,11 +41,11 @@ function App() {
         <div className="dashboard-content">
           {/* Left Panel Content */}
           <div className="left-panel">
-            {/* StackTrace - Component Step 4 */}
-            <div className="placeholder-box">Stack Trace Placeholder</div>
+            {/* Stack Trace Input */}
+            <StackTrace />
 
-            {/* CodeContext - Component Step 4 */}
-            <div className="placeholder-box">Code Context Placeholder</div>
+            {/* Code Context Viewer */}
+            <CodeContext isFixApplied={isFixApplied} />
 
             {/* Analysis - Component Step 5 */}
             <div className="placeholder-box">MemCode Analysis Placeholder</div>
