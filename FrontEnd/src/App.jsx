@@ -10,6 +10,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('live-debugger');
   const [isReloading, setIsReloading] = useState(false);
   const [isFixApplied, setIsFixApplied] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleReload = () => {
     setIsReloading(true);
@@ -24,8 +25,46 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Mobile Top Navigation Bar */}
+      <div className="mobile-topbar">
+        <button
+          className="btn-hamburger"
+          onClick={() => setIsSidebarOpen(true)}
+          aria-label="Open menu"
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+        <div className="mobile-logo-group">
+          <div className="logo-icon-small">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="var(--accent-red)" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+              <path d="M6 7V5" />
+              <path d="M18 7V5" />
+            </svg>
+          </div>
+          <span className="mobile-brand-name">MemCode</span>
+        </div>
+      </div>
+
+      {/* Sidebar Backdrop Overlay on Mobile */}
+      {isSidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar Navigation */}
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Sidebar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
       {/* Main Content Area */}
       <div className="main-frame">

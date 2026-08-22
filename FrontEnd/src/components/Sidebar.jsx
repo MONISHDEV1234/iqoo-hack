@@ -2,10 +2,10 @@ import React from 'react';
 
 /**
  * Sidebar Component
- * Renders the logo, navigation links, and a bottom settings button.
+ * Renders the logo, navigation links, and settings.
+ * Supports mobile slides and close toggle integrations.
  */
-function Sidebar({ activeTab = 'live-debugger', onTabChange }) {
-    // Navigation Menu Configuration
+function Sidebar({ activeTab = 'live-debugger', onTabChange, isOpen, onClose }) {
     const menuItems = [
         {
             id: 'live-debugger',
@@ -42,24 +42,33 @@ function Sidebar({ activeTab = 'live-debugger', onTabChange }) {
     ];
 
     return (
-        <aside className="sidebar-container">
-            {/* Brand Design */}
-            <div className="sidebar-brand">
-                {/* Sleek debugger bug / chip logo */}
-                <div className="logo-icon">
-                    <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                        <path d="M6 21V19" />
-                        <path d="M10 21V19" />
-                        <path d="M14 21V19" />
-                        <path d="M18 21V19" />
-                        <path d="M6 7V5" />
-                        <path d="M10 7V5" />
-                        <path d="M14 7V5" />
-                        <path d="M18 7V5" />
-                    </svg>
+        <aside className={`sidebar-container ${isOpen ? 'mobile-open' : ''}`}>
+            {/* Brand Header */}
+            <div className="sidebar-brand-group">
+                <div className="sidebar-brand">
+                    <div className="logo-icon">
+                        <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                            <path d="M6 21V19" />
+                            <path d="M10 21V19" />
+                            <path d="M14 21V19" />
+                            <path d="M18 21V19" />
+                            <path d="M6 7V5" />
+                            <path d="M10 7V5" />
+                            <path d="M14 7V5" />
+                            <path d="M18 7V5" />
+                        </svg>
+                    </div>
+                    <span className="brand-text">MemCode</span>
                 </div>
-                <span className="brand-text">MemCode</span>
+
+                {/* Mobile Close Button */}
+                <button className="btn-close-sidebar" onClick={onClose} aria-label="Close menu">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
             </div>
 
             {/* Navigation List */}
@@ -70,7 +79,10 @@ function Sidebar({ activeTab = 'live-debugger', onTabChange }) {
                         <button
                             key={item.id}
                             className={`nav-item ${isActive ? 'active' : ''}`}
-                            onClick={() => onTabChange && onTabChange(item.id)}
+                            onClick={() => {
+                                onTabChange && onTabChange(item.id);
+                                onClose && onClose(); // close on tap for mobile
+                            }}
                         >
                             <span className="nav-icon">{item.icon}</span>
                             <span className="nav-label">{item.label}</span>
@@ -84,7 +96,10 @@ function Sidebar({ activeTab = 'live-debugger', onTabChange }) {
             <div className="sidebar-footer">
                 <button
                     className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-                    onClick={() => onTabChange && onTabChange('settings')}
+                    onClick={() => {
+                        onTabChange && onTabChange('settings');
+                        onClose && onClose();
+                    }}
                 >
                     <span className="nav-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
