@@ -19,10 +19,28 @@ def _get_model():
 
 
 def embed(text: str) -> np.ndarray:
-    """Return a 384-dim float32 numpy array."""
-    model = _get_model()
-    vec = model.encode(text, normalize_embeddings=True)
-    return vec.astype(np.float32)
+    """Return a 384-dim float32 numpy array. Falls back to a deterministic fallback if model is unavailable."""
+    try:
+        model = _get_model()
+        vec = model.encode(text, normalize_embeddings=True)
+        return vec.astype(np.float32)
+    except Exception as e:
+        words = text.lower().split()
+        vec = np.zeros(384, dtype=np.float32)
+        for i, word in enumerate(words):
+            # Compute a stable deterministic integer hash code
+            h = 5381
+            for char in word:
+                h = ((h << 5) + h) + ord(char)
+            idx = abs(h) % 384
+            vec[idx] += 1.0 + (i * 0.05)
+        # Normalize
+        norm = np.linalg.norm(vec)
+        if norm > 0:
+            vec /= norm
+        else:
+            vec[0] = 1.0
+        return vec
 
 
 def to_blob(vec: np.ndarray) -> bytes:
