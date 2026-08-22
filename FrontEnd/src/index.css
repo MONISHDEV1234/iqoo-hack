@@ -1304,6 +1304,7 @@ body {
     display: flex;
     flex-direction: column;
   }
+<<<<<<< HEAD
 }
 
 /* ----------------------------------------------------
@@ -1738,4 +1739,6 @@ body {
   .vault-pane-title {
     font-size: 20px;
   }
+=======
+>>>>>>> 0473d6661e962290016d98a86248a7d0b0ae8402
 }

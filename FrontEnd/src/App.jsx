@@ -109,79 +109,74 @@ function App() {
           <MemoryVault />
         )}
 
-
         {/* Dynamic Historical Logs View */}
-        {
-          activeTab === 'history' && (
-            <div className="tab-pane-container">
-              <h2 className="pane-title">Error History</h2>
-              <p className="pane-subtitle">Review historical logs of issues detected and fixed by MemCode on this codebase.</p>
-              <div className="history-table">
-                <div className="history-row header-row">
-                  <div>Error Type</div>
-                  <div>Location</div>
-                  <div>Status</div>
-                  <div>Date Detected</div>
-                </div>
-                <div className="history-row">
-                  <div className="err-type">TypeError: Cannot read properties of undefined</div>
-                  <div className="err-loc font-mono">oauth2.service.ts:142</div>
-                  <div><span className="badge-status pending">Needs Review</span></div>
-                  <div className="err-date">Today, 3:15 PM</div>
-                </div>
-                <div className="history-row">
-                  <div className="err-type">AxiosError: Request failed with status code 401</div>
-                  <div className="err-loc font-mono">api.interceptor.ts:48</div>
-                  <div><span className="badge-status resolved">Resolved</span></div>
-                  <div className="err-date">2 weeks ago</div>
-                </div>
-                <div className="history-row">
-                  <div className="err-type">ReferenceError: secretToken is not defined</div>
-                  <div className="err-loc font-mono">auth.controller.ts:80</div>
-                  <div><span className="badge-status resolved">Resolved</span></div>
-                  <div className="err-date">3 months ago</div>
-                </div>
+        {activeTab === 'history' && (
+          <div className="tab-pane-container">
+            <h2 className="pane-title">Error History</h2>
+            <p className="pane-subtitle">Review historical logs of issues detected and fixed by MemCode on this codebase.</p>
+            <div className="history-table">
+              <div className="history-row header-row">
+                <div>Error Type</div>
+                <div>Location</div>
+                <div>Status</div>
+                <div>Date Detected</div>
+              </div>
+              <div className="history-row">
+                <div className="err-type">TypeError: Cannot read properties of undefined</div>
+                <div className="err-loc font-mono">oauth2.service.ts:142</div>
+                <div><span className="badge-status pending">Needs Review</span></div>
+                <div className="err-date">Today, 3:15 PM</div>
+              </div>
+              <div className="history-row">
+                <div className="err-type">AxiosError: Request failed with status code 401</div>
+                <div className="err-loc font-mono">api.interceptor.ts:48</div>
+                <div><span className="badge-status resolved">Resolved</span></div>
+                <div className="err-date">2 weeks ago</div>
+              </div>
+              <div className="history-row">
+                <div className="err-type">ReferenceError: secretToken is not defined</div>
+                <div className="err-loc font-mono">auth.controller.ts:80</div>
+                <div><span className="badge-status resolved">Resolved</span></div>
+                <div className="err-date">3 months ago</div>
               </div>
             </div>
-          )
-        }
+          </div>
+        )}
 
         {/* Dynamic Settings View */}
-        {
-          activeTab === 'settings' && (
-            <div className="tab-pane-container">
-              <h2 className="pane-title">Debugger Settings</h2>
-              <p className="pane-subtitle">Configure backend connections, LLM parameters, and commit behaviors.</p>
-              <div className="settings-form">
-                <div className="settings-group">
-                  <label className="settings-label">Active AI Model</label>
-                  <select className="settings-input-select">
-                    <option>MemCode Resnet-Pro (Default)</option>
-                    <option>Claude 3.5 Sonnet</option>
-                    <option>GPT-4o Debugger</option>
-                    <option>Local DeepSeek Coder 7B</option>
-                  </select>
+        {activeTab === 'settings' && (
+          <div className="tab-pane-container">
+            <h2 className="pane-title">Debugger Settings</h2>
+            <p className="pane-subtitle">Configure backend connections, LLM parameters, and commit behaviors.</p>
+            <div className="settings-form">
+              <div className="settings-group">
+                <label className="settings-label">Active AI Model</label>
+                <select className="settings-input-select">
+                  <option>MemCode Resnet-Pro (Default)</option>
+                  <option>Claude 3.5 Sonnet</option>
+                  <option>GPT-4o Debugger</option>
+                  <option>Local DeepSeek Coder 7B</option>
+                </select>
+              </div>
+              <div className="settings-group toggle-group">
+                <div>
+                  <div className="settings-label">Auto-Commit Resolution</div>
+                  <div className="setting-description">Automatically run git add/commit when a fix operates successfully in live dev.</div>
                 </div>
-                <div className="settings-group toggle-group">
-                  <div>
-                    <div className="settings-label">Auto-Commit Resolution</div>
-                    <div className="setting-description">Automatically run git add/commit when a fix operates successfully in live dev.</div>
-                  </div>
-                  <input type="checkbox" className="settings-checkbox" defaultChecked />
+                <input type="checkbox" className="settings-checkbox" defaultChecked />
+              </div>
+              <div className="settings-group toggle-group">
+                <div>
+                  <div className="settings-label">Run Tests Intercept</div>
+                  <div className="setting-description">Run npm test automatically on staging server before applying fix.</div>
                 </div>
-                <div className="settings-group toggle-group">
-                  <div>
-                    <div className="settings-label">Run Tests Intercept</div>
-                    <div className="setting-description">Run npm test automatically on staging server before applying fix.</div>
-                  </div>
-                  <input type="checkbox" className="settings-checkbox" />
-                </div>
+                <input type="checkbox" className="settings-checkbox" />
               </div>
             </div>
-          )
-        }
-      </div >
-    </div >
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
