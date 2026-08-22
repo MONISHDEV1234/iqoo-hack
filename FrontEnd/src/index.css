@@ -545,3 +545,92 @@ body {
 .code-line.highlight-fix .comment {
   color: var(--accent-green);
 }
+
+/* Analysis Panel Specific Styles */
+.analysis-card {
+  border-color: var(--border-color);
+}
+
+.analysis-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background-color: rgba(18, 19, 26, 0.2);
+}
+
+.analysis-text {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.text-secondary-info {
+  color: var(--text-secondary);
+}
+
+.inline-code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background-color: var(--accent-red-light);
+  color: #fca5a5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+/* Suggested Fix Block Code styling */
+.suggested-fix-container {
+  position: relative;
+  margin-top: 8px;
+}
+
+.fix-code-block {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 16px 20px;
+  background-color: var(--bg-code);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+.btn-copy-fix {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background-color: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  padding: 4px 10px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  color: var(--accent-purple-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 5;
+}
+
+.btn-copy-fix:hover {
+  background-color: var(--accent-purple);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.copy-label.success {
+  color: var(--accent-green);
+}
+
+/* Fix Code Block syntax helpers */
+.class-name {
+  color: #60a5fa;
+  /* light blue class */
+}
+
+.string {
+  color: #f472b6;
+  /* string token pink/rose */
+}

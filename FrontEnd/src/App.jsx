@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import StackTrace from './components/StackTrace';
 import CodeContext from './components/CodeContext';
+import Analysis from './components/Analysis';
 
 function App() {
   const [activeTab, setActiveTab] = useState('live-debugger');
@@ -47,8 +48,8 @@ function App() {
             {/* Code Context Viewer */}
             <CodeContext isFixApplied={isFixApplied} />
 
-            {/* Analysis - Component Step 5 */}
-            <div className="placeholder-box">MemCode Analysis Placeholder</div>
+            {/* AI analysis and Suggest Fix block */}
+            <Analysis />
           </div>
 
           {/* Right Panel Content */}
