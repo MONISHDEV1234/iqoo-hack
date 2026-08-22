@@ -1,8 +1,22 @@
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
+import Header from './components/Header';
 
 function App() {
   const [activeTab, setActiveTab] = useState('live-debugger');
+  const [isReloading, setIsReloading] = useState(false);
+  const [isFixApplied, setIsFixApplied] = useState(false);
+
+  const handleReload = () => {
+    setIsReloading(true);
+    setTimeout(() => {
+      setIsReloading(false);
+    }, 1000);
+  };
+
+  const handleRunFix = () => {
+    setIsFixApplied((prev) => !prev);
+  };
 
   return (
     <div className="app-container">
@@ -11,9 +25,14 @@ function App() {
 
       {/* Main Content Area */}
       <div className="main-frame">
-        {/* Header - Component Step 3 */}
+        {/* Top App Header */}
         <header className="header-container">
-          <div style={{ color: 'var(--text-muted)' }}>Header Placeholder</div>
+          <Header
+            onReload={handleReload}
+            onRunFix={handleRunFix}
+            isReloading={isReloading}
+            isFixApplied={isFixApplied}
+          />
         </header>
 
         {/* Dashboard Split Grid */}
