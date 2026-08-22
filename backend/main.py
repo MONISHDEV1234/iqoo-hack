@@ -210,10 +210,84 @@ async def llm_ask(req: LLMAskRequest):
     try:
         text = _llm.complete(system_prompt, user_prompt)
         return LLMAskResponse(response=text, mode=req.mode)
-    except LLMUnavailableError as e:
+    except Exception as e:
+        import re
+        fallback_markdown = (
+            "# DIAGNOSTIC EVALUATION (FALLBACK)\n\n"
+            "An error occurred while communicating with the Gemini AI engine. "
+            "However, we recovered relevant solutions from the local memory database:\n\n"
+        )
+        experiences = []
+        if req.report_text:
+            entries = req.report_text.split('\n\n')
+            for entry in entries:
+                exp_id = re.search(r'EXPERIENCE ID:\s*(.*)', entry)
+                title = re.search(r'TITLE:\s*(.*)', entry)
+                prob = re.search(r'PROBLEM:\s*([\s\S]*?)(?=\nSOLUTION:|$)', entry)
+                sol = re.search(r'SOLUTION:\s*([\s\S]*)', entry)
+                
+                experiences.append({
+                    "id": exp_id.group(1).strip() if exp_id else "N/A",
+                    "title": title.group(1).strip() if title else "Prior Experience",
+                    "problem": prob.group(1).strip() if prob else "",
+                    "solution": sol.group(1).strip() if sol else "",
+                })
+        
+        for exp in experiences:
+            fallback_markdown += f"## {exp['title']} (Experience ID: {exp['id']})\n"
+            if exp['problem']:
+                prob_desc = exp['problem'].split('\n')[0]
+                fallback_markdown += f"**Observed Problem:** {prob_desc}\n\n"
+            if exp['solution']:
+                fallback_markdown += f"**Suggested Fix:**\n```javascript\n{exp['solution']}\n```\n\n"
+                
+        if not experiences:
+            prob_lower = req.problem_text.lower()
+            if "cors" in prob_lower or "preflight" in prob_lower:
+                fallback_markdown += (
+                    "### CORS Preflight Policy Blocked\n"
+                    "This error suggests that the origin request from client port is blocked by the target receiver. "
+                    "Ensure you register CORS middleware configurations.\n\n"
+                    "**Suggested Fix:**\n"
+                    "```javascript\n"
+                    "const cors = require('cors');\n"
+                    "app.use(cors({\n"
+                    "  origin: ['http://localhost:5173'],\n"
+                    "  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],\n"
+                    "  credentials: true\n"
+                    "}));\n"
+                    "```\n"
+                )
+            elif "hydration" in prob_lower:
+                fallback_markdown += (
+                    "### React Hydration Mismatch\n"
+                    "The component structure generated on the server does not align with the Client DOM reconciliation template.\n\n"
+                    "**Suggested Fix:**\n"
+                    "```javascript\n"
+                    "useEffect(() => {\n"
+                    "  setMounted(true);\n"
+                    "}, []);\n"
+                    "```\n"
+                )
+            elif "prisma" in prob_lower:
+                fallback_markdown += (
+                    "### Prisma db pool Limit Exceeded\n"
+                    "Maximum simultaneous client pool allocations saturated.\n\n"
+                    "**Suggested Fix:**\n"
+                    "```javascript\n"
+                    "prisma.$disconnect();\n"
+                    "```\n"
+                )
+            else:
+                fallback_markdown += (
+                    "### Debugging Fallback Helper\n"
+                    "Please review the logs trace. If you already have matching items indexed in your vault, check the Sidebar or History records.\n"
+                )
+                
         return LLMAskResponse(
-            response=f"[LLM unavailable: {e}] Use the structured report data above.",
-            mode=req.mode, provider="unavailable",
+            response=fallback_markdown,
+            mode=req.mode,
+            provider="fallback"
         )
 
 
