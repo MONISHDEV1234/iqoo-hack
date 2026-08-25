@@ -60,6 +60,17 @@ app.add_middleware(
 _llm = GeminiProvider()
 
 
+@app.get("/")
+def root():
+    return {
+        "status": "online",
+        "service": "Sentinel API Core",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "stats": "/dashboard/stats"
+    }
+
+
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _row_to_dict(row) -> Dict[str, Any]:
