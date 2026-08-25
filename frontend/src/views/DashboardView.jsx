@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api/client';
-import { Database, Search, Zap, Layers, RefreshCw, Award, ArrowRight } from 'lucide-react';
+import { Database, Search, Zap, Award, RefreshCw, Layers, ArrowRight } from 'lucide-react';
 import { QuickDetailModal } from '../components/QuickDetailModal';
 
 export function DashboardView() {
@@ -23,165 +23,149 @@ export function DashboardView() {
     }
   };
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  useEffect(() => { fetchDashboardData(); }, []);
 
   if (loading && !stats) {
     return (
-      <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
-        <RefreshCw size={32} style={{ marginBottom: '16px' }} />
-        <p>Loading MistakeMemo Core Metrics...</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '12px', color: 'var(--text-muted)' }}>
+        <RefreshCw size={28} style={{ animation: 'spin 1s linear infinite' }} />
+        <p style={{ fontSize: '0.85rem' }}>Loading metrics...</p>
+        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   const statCards = [
-    { title: 'Total Experiences', value: stats?.total_experiences || 0, icon: Database, color: 'var(--accent-cyan)' },
-    { title: 'Memory Recalls', value: stats?.total_recalls || 0, icon: Search, color: 'var(--accent-purple)' },
-    { title: 'Recalls in Reports', value: stats?.recalls_used_in_report || 0, icon: Award, color: 'var(--accent-emerald)' },
-    { title: 'Captured Sessions', value: stats?.total_sessions || 0, icon: Zap, color: 'var(--accent-amber)' },
+    { title: 'Experiences', value: stats?.total_experiences ?? 0,     icon: Database, color: 'var(--accent-cyan)'    },
+    { title: 'Recalls',     value: stats?.total_recalls ?? 0,         icon: Search,   color: 'var(--accent-purple)'  },
+    { title: 'In Reports',  value: stats?.recalls_used_in_report ?? 0,icon: Award,    color: 'var(--accent-emerald)' },
+    { title: 'Sessions',    value: stats?.total_sessions ?? 0,        icon: Zap,      color: 'var(--accent-amber)'   },
   ];
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+      {/* Page heading */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>
-            System <span className="gradient-text">Dashboard</span>
-          </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Real-time telemetry and memory vault metrics from local core.
-          </p>
+          <h2 className="view-title">System <span className="gradient-text">Dashboard</span></h2>
+          <p className="view-subtitle">Real-time memory vault metrics</p>
         </div>
-        <button onClick={fetchDashboardData} className="btn btn-secondary">
-          <RefreshCw size={16} /> Refresh
+        <button id="dashboard-refresh-btn" onClick={fetchDashboardData} className="btn btn-secondary" style={{ padding: '8px 12px', fontSize: '0.78rem' }}>
+          <RefreshCw size={14} /> Refresh
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '28px' }}>
+      {/* Stat cards — 2-per-row grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
         {statCards.map((card, idx) => {
           const Icon = card.icon;
           return (
-            <div key={idx} className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-                  {card.title}
-                </span>
-                <span style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff' }}>
-                  {card.value}
-                </span>
+            <div key={idx} className="glass-panel" style={{ padding: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                <div style={{
+                  width: '34px', height: '34px', borderRadius: '9px',
+                  background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-glass)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: card.color,
+                  flexShrink: 0,
+                }}>
+                  <Icon size={17} />
+                </div>
               </div>
-              <div style={{
-                width: '44px', height: '44px', borderRadius: '10px',
-                background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--border-glass)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', color: card.color
-              }}>
-                <Icon size={22} />
+              <div style={{ fontSize: '1.7rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1 }}>
+                {card.value}
               </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>{card.title}</div>
             </div>
           );
         })}
       </div>
 
-      {/* Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
-        
-        {/* Recent Experiences */}
-        <div className="glass-panel" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Layers size={18} style={{ color: 'var(--accent-cyan)' }} />
-              Recent Indexings (Click box for short floating summary)
-            </h3>
-            <span className="badge badge-cyan">Latest 5</span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {recentExps.length === 0 ? (
-              <p style={{ color: 'var(--text-subtle)', fontStyle: 'italic', padding: '16px 0' }}>
-                No experiences indexed yet. Run a session extraction or seed memories.
-              </p>
-            ) : (
-              recentExps.map((exp) => (
-                <div
-                  key={exp.id}
-                  className="glass-panel-interactive"
-                  style={{
-                    padding: '14px', borderRadius: '10px',
-                    background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-glass)',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => setSelectedModalItem(exp)}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.92rem' }}>
-                      #{exp.id} — {exp.title || exp.problem_summary.slice(0, 50)}
-                    </span>
-                    <span className="badge badge-purple">{exp.category}</span>
-                  </div>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                    {exp.problem_summary}
-                  </p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-subtle)' }}>
-                    <span>Scope: <strong>{exp.scope}</strong> | Confidence: <strong>{Math.round((exp.confidence || 0) * 100)}%</strong></span>
-                    <span style={{ color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-                      Quick Floating Bar <ArrowRight size={13} />
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+      {/* Recent Experiences */}
+      <div className="glass-panel" style={{ padding: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <h3 style={{ fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Layers size={16} style={{ color: 'var(--accent-cyan)' }} />
+            Recent Indexings
+          </h3>
+          <span className="badge badge-cyan">Latest 5</span>
         </div>
 
-        {/* Breakdowns */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          
-          <div className="glass-panel" style={{ padding: '20px' }}>
-            <h3 style={{ fontSize: '1rem', marginBottom: '14px' }}>Categories</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {Object.entries(stats?.experiences_by_category || {}).map(([cat, count]) => (
-                <div key={cat}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '4px' }}>
-                    <span style={{ textTransform: 'capitalize', color: 'var(--text-muted)' }}>{cat}</span>
-                    <span style={{ fontWeight: 600, color: 'var(--accent-cyan)' }}>{count}</span>
-                  </div>
-                  <div style={{ height: '5px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${Math.min(100, (count / (stats?.total_experiences || 1)) * 100)}%`,
-                      background: 'linear-gradient(90deg, var(--accent-cyan), var(--accent-purple))'
-                    }} />
-                  </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {recentExps.length === 0 ? (
+            <p style={{ color: 'var(--text-subtle)', fontStyle: 'italic', fontSize: '0.82rem', padding: '12px 0' }}>
+              No experiences indexed yet.
+            </p>
+          ) : (
+            recentExps.map((exp) => (
+              <div
+                key={exp.id}
+                className="glass-panel-interactive"
+                style={{
+                  padding: '12px', borderRadius: '10px',
+                  background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-glass)',
+                  cursor: 'pointer',
+                }}
+                onClick={() => setSelectedModalItem(exp)}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '5px' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.85rem', flex: 1, marginRight: '8px' }}>
+                    #{exp.id} — {(exp.title || exp.problem_summary).slice(0, 40)}
+                  </span>
+                  <span className="badge badge-purple" style={{ flexShrink: 0 }}>{exp.category}</span>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="glass-panel" style={{ padding: '20px' }}>
-            <h3 style={{ fontSize: '1rem', marginBottom: '14px' }}>Scopes</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {Object.entries(stats?.experiences_by_scope || {}).map(([scope, count]) => (
-                <div key={scope} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
-                  <span style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>{scope}</span>
-                  <span className="badge badge-emerald">{count} items</span>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '6px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {exp.problem_summary}
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: 'var(--text-subtle)' }}>
+                  <span>Conf: <strong>{Math.round((exp.confidence || 0) * 100)}%</strong></span>
+                  <span style={{ color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
+                    Details <ArrowRight size={11} />
+                  </span>
                 </div>
-              ))}
-            </div>
-          </div>
-
+              </div>
+            ))
+          )}
         </div>
-
       </div>
 
-      {/* Floating Detail Bar */}
-      <QuickDetailModal
-        item={selectedModalItem}
-        onClose={() => setSelectedModalItem(null)}
-      />
+      {/* Categories */}
+      <div className="glass-panel" style={{ padding: '16px' }}>
+        <h3 style={{ fontSize: '0.95rem', marginBottom: '12px' }}>Top Categories</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {Object.entries(stats?.experiences_by_category || {}).map(([cat, count]) => (
+            <div key={cat}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px' }}>
+                <span style={{ textTransform: 'capitalize', color: 'var(--text-muted)' }}>{cat}</span>
+                <span style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{count}</span>
+              </div>
+              <div style={{ height: '5px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${Math.min(100, (count / (stats?.total_experiences || 1)) * 100)}%`,
+                  background: 'linear-gradient(90deg, #ef4444, #3b82f6)',
+                  borderRadius: '3px',
+                }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Scopes */}
+      <div className="glass-panel" style={{ padding: '16px' }}>
+        <h3 style={{ fontSize: '0.95rem', marginBottom: '12px' }}>By Scope</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {Object.entries(stats?.experiences_by_scope || {}).map(([scope, count]) => (
+            <div key={scope} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+              <span style={{ textTransform: 'uppercase', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)' }}>{scope}</span>
+              <span className="badge badge-emerald">{count} items</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <QuickDetailModal item={selectedModalItem} onClose={() => setSelectedModalItem(null)} />
     </div>
   );
 }

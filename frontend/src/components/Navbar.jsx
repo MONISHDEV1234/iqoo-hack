@@ -33,7 +33,7 @@ export function Navbar({ activeTab, setActiveTab, isConnected }) {
           <Cpu size={20} />
         </div>
         <div>
-          <h2 style={{ fontSize: '1.2rem', lineHeight: '1.1' }}>MistakeMemo</h2>
+          <h2 style={{ fontSize: '1.2rem', lineHeight: '1.1' }}>Sentinel</h2>
           <span style={{ fontSize: '0.7rem', color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Experience Engine Console
           </span>
