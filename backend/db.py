@@ -12,11 +12,26 @@ DB_PATH = Path(os.environ.get("MISTAKEMEMO_DB", "mistakememo.db"))
 
 
 def get_conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
-    return conn
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA foreign_keys=ON")
+        return conn
+    except sqlite3.DatabaseError as e:
+        if "file is not a database" in str(e) or "disk I/O error" in str(e):
+            print(f"[db] Invalid/corrupted DB at {DB_PATH}. Resetting database file...")
+            if DB_PATH.exists():
+                try:
+                    DB_PATH.unlink()
+                except Exception:
+                    pass
+            conn = sqlite3.connect(DB_PATH)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA foreign_keys=ON")
+            return conn
+        raise e
 
 
 def init_db():
@@ -115,5 +130,13 @@ def init_db():
     """)
 
     conn.commit()
+    count = cur.execute("SELECT COUNT(*) FROM experiences").fetchone()[0]
     conn.close()
-    print(f"[db] Initialized at {DB_PATH.resolve()}")
+    print(f"[db] Initialized at {DB_PATH.resolve()} (total items: {count})")
+
+    if count == 0:
+        try:
+            from seed.seed_memories import run_seed
+            run_seed()
+        except Exception as err:
+            print(f"[db] Auto-seed warning: {err}")
