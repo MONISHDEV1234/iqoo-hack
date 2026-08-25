@@ -7,8 +7,12 @@ Role 2 owns:  GET/POST /experiences,  POST /retrieve,  POST /report,
 """
 import json
 import os
+import sys
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
+
+# Ensure backend directory is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 load_dotenv()
 
