@@ -4,7 +4,7 @@
   "description": "Local-first experience-learning layer for AI-assisted debugging.",
   "version": "0.1.0",
   "engines": {
-    "vscode": "^1.134.0"
+    "vscode": "^1.123.0"
   },
   "publisher": "mistakememo",
   "categories": [
@@ -56,7 +56,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.19.43",
-    "@types/vscode": "^1.134.0",
+    "@types/vscode": "^1.123.0",
     "@vscode/vsce": "^2.32.0",
     "typescript": "^5.9.3"
   }
